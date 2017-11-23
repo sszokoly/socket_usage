@@ -3,9 +3,11 @@ This script attempts to give a rough estimate of the total number of active tcp 
 extracted from a pcap file provided as argument. It assumes the higher port number is the 
 client side ephemeral port and the lower port is the service port. Also it presumes that when
 a TCP packet with RST flag is sent or received the socket is freed on both sides. Furthermore
-it also does not care about the net.ipv4.tcp_fin_timeout parameter. It simply assumes the socket
-is closed when the 4-way-handshake is completed. It requires tshark to be available at the default
-installation path on Windows or Linux.
+it also does not care about the net.ipv4.tcp_fin_timeout parameter. It simply considers the socket
+closed when the 4-way-handshake is completed. It requires tshark to be available at the default
+installation path on Windows or Linux. In addition one of my intentions was that I should be able
+run this script on Linux servers which are not connected to the internet and cannot connect to
+python library repos so they can only make use of that they came with by default.
 
 ## Example
 
