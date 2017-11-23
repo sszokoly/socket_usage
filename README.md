@@ -1,9 +1,12 @@
 # socket_usage
-Provides a rough estimate of the total number of active tcp connections extracted from a pcap file
-provided as argument. It assumes the higher port numbers are the client side ephemeral ports and the
-lower ports are the services ports. Also it assumes whe RST is sent or received the socket is freed.
-It also does not care about the net.ipv4.tcp_fin_timeout parameter. It simply assumes the socket is closed
-when the 4-way-handshake is completed.
+This script attempts to give a rough estimate of the total number of active tcp connections
+extracted from a pcap file provided as argument. It assumes the higher port number is the 
+client side ephemeral port and the lower port is the service port. Also it presumes that when
+a TCP packet with RST flag is sent or received the socket is freed on both sides. Furthermore
+it also does not care about the net.ipv4.tcp_fin_timeout parameter. It simply assumes the socket
+is closed when the 4-way-handshake is completed.
+
+## Example
 
 ```
 $ python socket_usage.py 1700_1710.pcap.pcapng
