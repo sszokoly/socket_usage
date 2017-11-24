@@ -258,7 +258,7 @@ def main():
     reader = pcap_reader(args[0], opts.hosts, opts.ports)
     for line in reader:
         if DEBUG:
-            print 'Line: %s' % [line.strip()]
+            print 'Packet: %s' % [line.strip()]
         no, srcip, srcport, dstip, dstport, seq, ack, flags = line.split('|', 7)
         flags = int(flags.replace('|', ''), 2)
         fs = frozenset([srcip, srcport, dstip, dstport])
