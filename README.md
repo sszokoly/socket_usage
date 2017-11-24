@@ -4,7 +4,7 @@ tcp sockets extracted from the pcap files provided as arguments. It assumes the 
 number is the Client side ephemeral port and the lower port is the Server side service port.
 Furthermore it does not care about the net.ipv4.tcp_fin_timeout parameter. It simply considers
 the socket closed when the 4-way or half-duplex closure is properly performed. If that is not
-the case it considers the socket as 'Lingering'. Most of the time these sockets eventually may
+the case it considers the socket 'lingering'. Most of the time these sockets eventually may
 be closed by the server or client but that cannot be determined for sure from the pcap trace.
 It requires tshark to be available at the default installation path on Windows or Linux.
 In addition one of goals behind the development of this utility was that it should be able to
