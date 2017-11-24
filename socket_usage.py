@@ -3,17 +3,18 @@
 #############################################################################
 ## Name: socket_usage.py
 ## Description: provides a rough estimate of the number of active sockets
-## found in a pcap file, requires tshark to be available at the default path
+## found in a pcap file, requires tshark to be available in the $PATH
 ## Options: see help, -h
 ## Version: see option -v
 ## Date: 2017-11-23
 #############################################################################
 '''
-import sys
 import os
 import re
-from subprocess import Popen, PIPE
+import sys
 from operator import itemgetter
+from optparse import OptionParser
+from subprocess import Popen, PIPE
 try:
     from collections import Counter
 except:
@@ -100,7 +101,12 @@ ACK = 0b0010
 RST = 0b0001
 RSTACK = 0b0011
 DEBUG = 0
-
+VERSION = 0.1
+DESCRIPTION = '''
+This script attempts to give the rough estimate of the number of active sockets
+found in a pcap file provided as argument, requires tshark to be available in the
+$PATH.
+'''
 
 class Connection():
     '''
@@ -122,29 +128,6 @@ class Connection():
         l.append(':'.join((self.server_ip, str(self.server_port))))
         return ''.join(l)
 
-
-def local_port_range():
-    '''
-    Returns the local port range, min and max values. Not used in this script.
-    :return: tuple
-    '''
-    start, end = None, None
-    if sys.platform == 'linux2':
-        fd = open('/proc/sys/net/ipv4/ip_local_port_range')
-        start, end = fd.read().split()
-        start, end = int(start), int(end)
-        fd.close()
-    else:
-        cmd = 'netsh int ipv4 show dynamicport tcp'
-        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-        data, err = proc.communicate()
-        if data:
-            start, qty = re.findall(r'Ports?\s*: (\d+).*', data)
-            start, end = int(start), int(start)+int(qty)
-    if not start or not end:
-        return (1025, 65536)
-    return (start, end)
-
 def tshark_path():
     '''
     Returns the path to tshark on Linux and Windows.
@@ -159,7 +142,7 @@ def tshark_path():
                 tshark_file = os.path.join(path.strip('"'), 'tshark')
                 if os.path.isfile(tshark_file) and os.access(tshark_file, os.X_OK):
                     return ' '.join(('nice', tshark_file))
-    elif sys.platform.startswith('win'):
+    elif 'win' in sys.platform:
         path_bit64 = 'c:\\Program Files\\Wireshark\\tshark.exe'
         path_bit32 = 'c:\\Program Files (x86)\\Wireshark\\tshark.exe'
         if os.path.exists(path_bit64):
@@ -228,9 +211,43 @@ def pcap_reader(infile, host_filter='', port_filter=''):
     return iter(proc.stdout.readline, '')
 
 def main():
+    global DEBUG
+    parser = OptionParser(
+        usage='%prog [<options>] <pcapfile>',
+        description=DESCRIPTION)
+    parser.add_option('--hosts',
+        action='store',
+        default='',
+        dest='hosts',
+        metavar=' ',
+        help='host filter, if multiple separate them with "|"')
+    parser.add_option('--ports',
+        action='store',
+        default='',
+        dest='ports',
+        metavar=' ',
+        help='port filter, if multiple separate with "|"')
+    parser.add_option('-d',
+        action='store_true',
+        default=False,
+        dest='debug',
+        metavar=' ',
+        help='enable debug output')
+    parser.add_option('-v', '--version',
+        action='store_true',
+        default=False,
+        dest='version',
+        metavar=' ',
+        help='show version and exit')
+    opts, args = parser.parse_args()
+    if opts.version:
+        print 'v' + str(VERSION)
+        return 0
+    if opts.debug:
+        DEBUG = 1
     conn_info = {}
     connections = {}
-    reader = pcap_reader(sys.argv[1])
+    reader = pcap_reader(args[0], opts.hosts, opts.ports)
     for line in reader:
         if DEBUG:
             print 'Line: %s' % [line.strip()]
