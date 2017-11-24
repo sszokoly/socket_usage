@@ -108,6 +108,7 @@ found in a pcap file provided as argument, requires tshark to be available in th
 $PATH.
 '''
 
+
 class Connection():
     '''
     Stores some connection related information.
@@ -122,11 +123,10 @@ class Connection():
         self.server_seq = None
         self.server_ack = None
     def __str__(self):
-        l = []
-        l.append(':'.join((self.client_ip, str(self.client_port))))
-        l.append('<->')
-        l.append(':'.join((self.server_ip, str(self.server_port))))
-        return ''.join(l)
+        return ''.join(
+            ':'.join((self.client_ip, str(self.client_port))),
+            '<->',
+            ':'.join((self.server_ip, str(self.server_port))))
 
 
 def tshark_path():
@@ -286,12 +286,12 @@ def main():
             if srcip == connections[fs].client_ip:
                 if connections[fs].server_seq and not\
                    connections[fs].client_ack and\
-                   int(ack) >= connections[fs].server_seq:
+                   int(ack) > connections[fs].server_seq:
                     connections[fs].client_ack = int(ack)
             elif srcip == connections[fs].server_ip:
                 if connections[fs].client_seq and not\
                    connections[fs].server_ack and\
-                   int(ack) >= connections[fs].client_seq:
+                   int(ack) > connections[fs].client_seq:
                     connections[fs].server_ack = int(ack)
             if connections[fs].client_seq is not None and\
                connections[fs].client_ack is not None and\
