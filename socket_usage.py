@@ -123,10 +123,10 @@ class Connection():
         self.server_seq = None
         self.server_ack = None
     def __str__(self):
-        return ''.join(
+        return ''.join((
             ':'.join((self.client_ip, str(self.client_port))),
             '<->',
-            ':'.join((self.server_ip, str(self.server_port))))
+            ':'.join((self.server_ip, str(self.server_port)))))
 
 
 def tshark_path():
@@ -259,7 +259,7 @@ def main():
         fs = frozenset([srcip, srcport, dstip, dstport])
         if flags == SYNACK or (flags == ACK and fs not in connections):
             if DEBUG:
-                print 'SYNACK: %s' % [line.strip()]
+                print 'In SYNACK: %s' % [fs]
             if int(srcport) > int(dstport):
                 conn_info['client_ip'] = srcip
                 conn_info['client_port'] = int(srcport)
@@ -275,14 +275,14 @@ def main():
             connections.update({ fs : Connection(conn_info)})
         elif flags == FINACK and fs in connections:
             if DEBUG:
-                print 'FINACK: %s' % [line.strip()]
+                print 'FINACK: %s' % [fs]
             if srcip == connections[fs].client_ip:
                 connections[fs].client_seq = int(seq)
             else:
                 connections[fs].server_seq = int(seq)
         elif flags == ACK and fs in connections:
             if DEBUG:
-                print 'ACK: %s' % [line.strip()]
+                print 'ACK: %s' % [fs]
             if srcip == connections[fs].client_ip:
                 if connections[fs].server_seq and not\
                    connections[fs].client_ack and\
@@ -302,7 +302,7 @@ def main():
                 connections.pop(fs, '')
         elif (flags == RST or flags == RSTACK) and fs in connections:
             if DEBUG:
-                print 'RST %s' % [line.strip()]
+                print 'RST %s' % [fs]
             connections.pop(fs, '')  
     s = Counter((x.server_ip for x in connections.values()))
     c = Counter((x.client_ip for x in connections.values()))
