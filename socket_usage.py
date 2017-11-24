@@ -319,7 +319,8 @@ def main():
             str(srv[1]).rjust(5), 
             cli[0].rjust(15), 
             str(cli[1]).rjust(5))
-    print '...truncated...'
+    if len(c) != len(s):
+        print '...truncated by zip...'
     print '\nTotal no. of active sockets: %s' % len(connections)
 
 
