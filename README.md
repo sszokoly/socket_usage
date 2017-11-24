@@ -1,13 +1,15 @@
 # socket_usage
-This script attempts to give a rough estimate of the total number of active tcp connections
-extracted from a pcap file provided as argument. It assumes the higher port number is the 
-client side ephemeral port and the lower port is the service port. Also it presumes that when
-a TCP packet with RST flag is sent or received the socket is freed on both sides. Furthermore
-it also does not care about the net.ipv4.tcp_fin_timeout parameter. It simply considers the socket
-closed when the 4-way-handshake is completed. It requires tshark to be available at the default
-installation path on Windows or Linux. In addition one of my intentions was that I should be able
-run this script on Linux servers which are not connected to the Internet, thus cannot make use of
-third party python libraries and so they can only make use of that they come with by default.
+This script in the first place attempts to give a rough estimate of the total number of open
+tcp sockets extracted from the pcap files provided as arguments. It assumes the higher port
+number is the Client side ephemeral port and the lower port is the Server side service port.
+Furthermore it does not care about the net.ipv4.tcp_fin_timeout parameter. It simply considers
+the socket closed when the 4-way or half-duplex closure is properly performed. If that is not
+the case it considers the socket as 'Lingering'. Most of the time these sockets eventually may
+be closed by the server or client but that cannot be determined for sure from the pcap trace.
+It requires tshark to be available at the default installation path on Windows or Linux.
+In addition one of goals behind the development of this utility was that it should be able to
+do what it is meant to do on Linux servers which are not connected to the Internet, thus they
+can only make use of the standard python libraries and tools they come with by default.
 
 ## Example
 

@@ -6,7 +6,7 @@
 ## found in a pcap file, requires tshark to be available in the $PATH
 ## Options: see help, -h
 ## Version: see option -v
-## Date: 2017-11-23
+## Date: 2017-11-24
 #############################################################################
 '''
 import os
@@ -99,13 +99,12 @@ except:
 
     Counter = Bag
 
-SYNACK = 0b1010
-FINACK = 0b0110
-ACK = 0b0010
+SYN = 0b1000
+ACK = 0b0100
+FIN = 0b0010
 RST = 0b0001
-RSTACK = 0b0011
 DEBUG = 0
-VERSION = 0.1
+VERSION = 0.2
 DESCRIPTION = '''
 This script attempts to give the rough estimate of the number of active sockets
 found in a pcap file provided as argument, requires tshark to be available in the
@@ -126,11 +125,35 @@ class Connection():
         self.client_ack = None
         self.server_seq = None
         self.server_ack = None
+    @property
+    def is_closed(self):
+        if self.client_seq is not None and self.client_ack is not None and\
+           self.server_seq is not None and self.server_ack is not None:
+           return True
+        return False
+    @property
+    def is_lingering(self):
+        if (self.client_seq is not None or self.server_seq is not None) and\
+           (self.server_ack is None or self.server_ack is None):
+            return True
+        return False
+    @property
+    def is_open(self):
+        if self.client_seq is None and self.server_seq is None:
+            return True
+        return False
     def __str__(self):
-        return ''.join((
-            ':'.join((self.client_ip, str(self.client_port))),
+        return ' '.join((
+            'Client:', 
+            ':'.join((self.client_ip.rjust(15), str(self.client_port).rjust(5))),
+            'Seq:' + str(self.client_seq).rjust(10),
+            'Ack:' + str(self.client_ack).rjust(10),
             '<->',
-            ':'.join((self.server_ip, str(self.server_port)))))
+            'Server:',
+            ':'.join((self.server_ip.rjust(15), str(self.server_port).rjust(5))),
+            'Seq:' + str(self.server_seq).rjust(10),
+            'Ack:' + str(self.server_ack).rjust(10),
+            ))
 
 
 def tshark_path():
@@ -207,8 +230,8 @@ def pcap_reader(infile, host_filter='', port_filter=''):
         '-e tcp.seq',
         '-e tcp.ack',
         '-e tcp.flags.syn',
-        '-e tcp.flags.fin',
         '-e tcp.flags.ack',
+        '-e tcp.flags.fin',
         '-e tcp.flags.reset',
         ))
     cmd = ' '.join((tshark, R, display_filter, fields, '-r', infile))
@@ -228,20 +251,26 @@ def main():
         default='',
         dest='hosts',
         metavar=' ',
-        help='host filter, if multiple separate them with "|"')
+        help='host filter, if multiple separated by "|"')
     parser.add_option('--ports',
         action='store',
         default='',
         dest='ports',
         metavar=' ',
-        help='port filter, if multiple separate them with "|"')
+        help='port filter, if multiple separated by "|"')
     parser.add_option('-d',
         action='store_true',
         default=False,
         dest='debug',
         metavar=' ',
         help='enable debug output')
-    parser.add_option('-v', '--version',
+    parser.add_option('-v',
+        action='store_true',
+        default=False,
+        dest='verbose',
+        metavar=' ',
+        help='verbose mode, prints open/lingering connections first')
+    parser.add_option('--version',
         action='store_true',
         default=False,
         dest='version',
@@ -255,79 +284,122 @@ def main():
         DEBUG = 1
     conn_info = {}
     connections = {}
-    reader = pcap_reader(args[0], opts.hosts, opts.ports)
-    for line in reader:
-        if DEBUG:
-            print 'Packet: %s' % [line.strip()]
-        no, srcip, srcport, dstip, dstport, seq, ack, flags = line.split('|', 7)
-        flags = int(flags.replace('|', ''), 2)
-        fs = frozenset([srcip, srcport, dstip, dstport])
-        if flags == SYNACK or (flags == ACK and fs not in connections):
+    for filename in args:
+        if opts.verbose:
+            print 'Processing %s' % filename
+        reader = pcap_reader(filename, opts.hosts, opts.ports)
+        for line in reader:
             if DEBUG:
-                print 'In SYNACK: %s' % [fs]
-            if int(srcport) > int(dstport):
-                conn_info['client_ip'] = srcip
-                conn_info['client_port'] = int(srcport)
-                conn_info['server_ip'] = dstip
-                conn_info['server_port'] = int(dstport)
-            else:
-                conn_info['client_ip'] = dstip
-                conn_info['client_port'] = int(dstport)
-                conn_info['server_ip'] = srcip
-                conn_info['server_port'] = int(srcport)
-            if DEBUG:
-                print 'conn_info: %s' % [conn_info]
-            connections.update({ fs : Connection(conn_info)})
-        elif flags == FINACK and fs in connections:
-            if DEBUG:
-                print 'In FINACK: %s' % [fs]
-            if srcip == connections[fs].client_ip:
-                connections[fs].client_seq = int(seq)
-            else:
-                connections[fs].server_seq = int(seq)
-        elif flags == ACK and fs in connections:
-            if DEBUG:
-                print 'In ACK: %s' % [fs]
-            if srcip == connections[fs].client_ip:
-                if connections[fs].server_seq and not\
-                   connections[fs].client_ack and\
-                   int(ack) > connections[fs].server_seq:
-                    connections[fs].client_ack = int(ack)
-            elif srcip == connections[fs].server_ip:
-                if connections[fs].client_seq and not\
-                   connections[fs].server_ack and\
-                   int(ack) > connections[fs].client_seq:
-                    connections[fs].server_ack = int(ack)
-            if connections[fs].client_seq is not None and\
-               connections[fs].client_ack is not None and\
-               connections[fs].server_seq is not None and\
-               connections[fs].server_ack is not None:
+                print 'Packet: %s' % [line.strip()]
+            #possibly ICMP unreachable respose
+            if ',' in line:
+                continue
+            no, srcip, srcport, dstip, dstport, seq, ack, flags = line.split('|', 7)
+            seq = int(seq)
+            ack = int(ack)
+            flags = int(flags.replace('|', ''), 2)
+            fs = frozenset([srcip, srcport, dstip, dstport])
+            if (flags & SYN and flags & ACK) or\
+               (flags & ACK and not flags & RST and fs not in connections):
                 if DEBUG:
-                    print 'Removing connection: %s' % connections[fs]
-                connections.pop(fs, '')
-        elif (flags == RST or flags == RSTACK) and fs in connections:
-            if DEBUG:
-                print 'In RST %s' % [fs]
-            connections.pop(fs, '')  
+                    print 'In SYNACK: %s' % [fs]
+                if int(srcport) > int(dstport):
+                    conn_info['client_ip'] = srcip
+                    conn_info['client_port'] = int(srcport)
+                    conn_info['server_ip'] = dstip
+                    conn_info['server_port'] = int(dstport)
+                else:
+                    conn_info['client_ip'] = dstip
+                    conn_info['client_port'] = int(dstport)
+                    conn_info['server_ip'] = srcip
+                    conn_info['server_port'] = int(srcport)
+                if DEBUG:
+                    print 'conn_info: %s' % [conn_info]
+                connections.update({ fs : Connection(conn_info)})
+            elif flags & FIN and fs in connections:
+                if DEBUG:
+                    print 'In FIN: %s' % [fs]
+                if srcip == connections[fs].client_ip:
+                    connections[fs].client_seq = seq
+                    if flags & ACK and\
+                       connections[fs].server_seq is not None and\
+                       ack > connections[fs].server_seq:
+                        connections[fs].client_ack = ack
+                elif srcip == connections[fs].server_ip:
+                    connections[fs].server_seq = int(seq)
+                    if flags & ACK and\
+                       connections[fs].client_seq is not None and\
+                       ack > connections[fs].client_seq:
+                        connections[fs].server_ack = ack
+            elif flags == ACK and fs in connections:
+                if DEBUG:
+                    print 'In ACK: %s' % [fs]
+                if srcip == connections[fs].client_ip:
+                    if connections[fs].server_seq and not\
+                       connections[fs].client_ack and\
+                       ack > connections[fs].server_seq:
+                        connections[fs].client_ack = ack
+                elif srcip == connections[fs].server_ip:
+                    if connections[fs].client_seq and not\
+                       connections[fs].server_ack and\
+                       ack > connections[fs].client_seq:
+                        connections[fs].server_ack = ack
+            elif (flags & RST) and fs in connections:
+                if DEBUG:
+                    print 'In RST %s' % [fs]
+                if srcip == connections[fs].client_ip:
+                    connections[fs].client_ack = 0
+                    if connections[fs].client_seq is None:
+                        connections[fs].client_seq = int(seq)-1
+                elif srcip == connections[fs].server_ip:
+                    connections[fs].server_ack = 0
+                    if connections[fs].server_seq is None:
+                        connections[fs].server_seq = int(seq)-1
+        if opts.verbose:
+            for value in (x for x in connections.values() if not x.is_closed):
+                print value
     s = Counter((x.server_ip for x in connections.values()))
     c = Counter((x.client_ip for x in connections.values()))
     if len(connections):
-        print '\n%s %s     %s %s' % (
-            'As Server'.ljust(15),
-            'Qty'.rjust(5),
-            'As Client'.ljust(15),
-            'Qty'.rjust(5))
-        print 47 * '-'
-    for srv,cli in zip(sorted(s.iteritems(), key=itemgetter(1), reverse=True),
-                       sorted(c.iteritems(), key=itemgetter(1), reverse=True)):
-        print '%s %s     %s %s' % (
-            srv[0].rjust(15),
-            str(srv[1]).rjust(5), 
-            cli[0].rjust(15), 
-            str(cli[1]).rjust(5))
+        title = ' '.join((
+            'Server'.center(15),
+            'Total'.rjust(6),
+            'Open'.rjust(6),
+            'Linger'.rjust(6),
+            'Client'.center(16),
+            'Total'.rjust(6),
+            'Open'.rjust(6),
+            'Linger'.rjust(6),
+            ))
+        sep = len(title) * '-'
+        print sep
+        print title
+        print sep
+        for srv,clt in zip(sorted(s.iteritems(), key=itemgetter(1), reverse=True),
+                           sorted(c.iteritems(), key=itemgetter(1), reverse=True)):
+            srv_conn = [x for x in connections.values() if x.server_ip == srv[0]]
+            srv_estab = [x for x in srv_conn if x.is_open]
+            srv_ling = [x for x in srv_conn if x.is_lingering]
+            clt_conn = [x for x in connections.values() if x.client_ip == clt[0]]
+            clt_estab = [x for x in clt_conn if x.is_open]
+            clt_ling = [x for x in clt_conn if x.is_lingering]
+            summary = ' '.join((
+                srv[0].rjust(15),
+                str(len(srv_conn)).rjust(6), 
+                str(len(srv_estab)).rjust(6), 
+                str(len(srv_ling)).rjust(6),
+                clt[0].rjust(16),
+                str(len(clt_conn)).rjust(6), 
+                str(len(clt_estab)).rjust(6), 
+                str(len(clt_ling)).rjust(6),
+                ))
+            print summary
     if len(c) != len(s):
         print '...truncated by zip...'
-    print '\nTotal no. of active sockets: %s' % len(connections)
+    total_open = len([x for x in connections.values() if x.is_open])
+    total_linger = len([x for x in connections.values() if x.is_lingering])
+    print '\nTotal no. of open sockets: %d' % total_open
+    print 'Total no. of ligering sockets: %d' % total_linger
 
 
 if __name__ == '__main__':
