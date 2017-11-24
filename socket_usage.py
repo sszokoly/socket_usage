@@ -306,12 +306,13 @@ def main():
             connections.pop(fs, '')  
     s = Counter((x.server_ip for x in connections.values()))
     c = Counter((x.client_ip for x in connections.values()))
-    print '\n%s %s     %s %s' % (
-        'Server IP'.ljust(15),
-        'Qty'.rjust(5),
-        'Client IP'.ljust(15),
-        'Qty'.rjust(5))
-    print 47 * '-'
+    if len(connections):
+        print '\n%s %s     %s %s' % (
+            'As Server'.ljust(15),
+            'Qty'.rjust(5),
+            'As Client'.ljust(15),
+            'Qty'.rjust(5))
+        print 47 * '-'
     for srv,cli in zip(sorted(s.iteritems(), key=itemgetter(1), reverse=True),
                        sorted(c.iteritems(), key=itemgetter(1), reverse=True)):
         print '%s %s     %s %s' % (
