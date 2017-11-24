@@ -280,14 +280,14 @@ def main():
             connections.update({ fs : Connection(conn_info)})
         elif flags == FINACK and fs in connections:
             if DEBUG:
-                print 'FINACK: %s' % [fs]
+                print 'In FINACK: %s' % [fs]
             if srcip == connections[fs].client_ip:
                 connections[fs].client_seq = int(seq)
             else:
                 connections[fs].server_seq = int(seq)
         elif flags == ACK and fs in connections:
             if DEBUG:
-                print 'ACK: %s' % [fs]
+                print 'In ACK: %s' % [fs]
             if srcip == connections[fs].client_ip:
                 if connections[fs].server_seq and not\
                    connections[fs].client_ack and\
@@ -307,7 +307,7 @@ def main():
                 connections.pop(fs, '')
         elif (flags == RST or flags == RSTACK) and fs in connections:
             if DEBUG:
-                print 'RST %s' % [fs]
+                print 'In RST %s' % [fs]
             connections.pop(fs, '')  
     s = Counter((x.server_ip for x in connections.values()))
     c = Counter((x.client_ip for x in connections.values()))
