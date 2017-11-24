@@ -20,6 +20,10 @@ except:
     from heapq import nlargest
     
     class Bag(object):
+        """
+        Counter Class as per https://code.activestate.com/recipes/259174/
+        suggested by https://docs.python.org/2/library/collections.html
+        """
         def __init__(self, iterable=()):
             self._data = {}
             self._len = 0
@@ -30,7 +34,7 @@ except:
                     self[elem] += n
             else:
                 for elem in iterable:
-                    self[elem] += 1 
+                    self[elem] += 1
         def __contains__(self, elem):
             return elem in self._data
         def __getitem__(self, elem):
@@ -47,11 +51,11 @@ except:
             assert self._len == sum(self._data.itervalues())
             return self._len
         def __eq__(self, other):
-            if not isinstance(other, bag):
+            if not isinstance(other, Bag):
                 return False
             return self._data == other._data
         def __ne__(self, other):
-            if not isinstance(other, bag):
+            if not isinstance(other, Bag):
                 return True
             return self._data != other._data
         def __hash__(self):
@@ -72,7 +76,7 @@ except:
         def __getstate__(self):
             return self._data.copy(), self._len
         def __setstate__(self, data):
-            self._data = data[0].copy()        
+            self._data = data[0].copy()
             self._len = data[1]
         def clear(self):
             self._data.clear()
@@ -80,11 +84,11 @@ except:
         def __iter__(self):
             for elem, cnt in self._data.iteritems():
                 for i in xrange(cnt):
-                    yield elem              
+                    yield elem
         def iterunique(self):
             return self._data.iterkeys()
         def itercounts(self):
-            return self._data.iteritems()     
+            return self._data.iteritems()
         def mostcommon(self, n=None):
             if n is None:
                 return sorted(self.itercounts(), key=itemgetter(1), reverse=True)
@@ -110,9 +114,9 @@ $PATH.
 
 
 class Connection():
-    '''
+    """
     Stores some connection related information.
-    '''
+    """
     def __init__(self, conn_info):
         self.client_ip = conn_info['client_ip']
         self.client_port = conn_info['client_port']
@@ -130,10 +134,10 @@ class Connection():
 
 
 def tshark_path():
-    '''
+    """
     Returns the path to tshark on Linux and Windows.
     :return: string
-    '''
+    """
     if sys.platform == 'linux2':
         tshark_file = '/usr/sbin/tshark'
         if os.path.isfile(tshark_file) and os.access(tshark_file, os.X_OK):
@@ -160,10 +164,11 @@ def tshark_path():
 
 
 def pcap_reader(infile, host_filter='', port_filter=''):
-    '''
-
-    :return:
-    '''
+    """
+    Parses pcap file and returns text output of each packet with certain fields
+    :param one mandatory, two options strings
+    :return iterator, which yields the output of tshark line by line
+    """
     R = '-R'
     tshark = tshark_path()
     if not tshark:
