@@ -10,7 +10,6 @@
 #############################################################################
 '''
 import os
-import re
 import sys
 from operator import itemgetter
 from optparse import OptionParser
@@ -67,7 +66,7 @@ except:
             result = self.__class__()
             memo[id(self)] = result
             data = result._data
-            result._data = deepcopy(self._data, memo)
+            result._data = deepcopy(self._data)
             result._len = self._len
             return result
         def __getstate__(self):
@@ -92,6 +91,7 @@ except:
             it = enumerate(self.itercounts())
             nl = nlargest(n, ((cnt, i, elem) for (i, (elem, cnt)) in it))
             return [(elem, cnt) for cnt, i, elem in nl]
+
 
     Counter = Bag
 
@@ -128,6 +128,7 @@ class Connection():
         l.append(':'.join((self.server_ip, str(self.server_port))))
         return ''.join(l)
 
+
 def tshark_path():
     '''
     Returns the path to tshark on Linux and Windows.
@@ -156,6 +157,7 @@ def tshark_path():
         return ''
     else:
         return ''
+
 
 def pcap_reader(infile, host_filter='', port_filter=''):
     '''
@@ -210,6 +212,7 @@ def pcap_reader(infile, host_filter='', port_filter=''):
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     return iter(proc.stdout.readline, '')
 
+
 def main():
     global DEBUG
     parser = OptionParser(
@@ -226,7 +229,7 @@ def main():
         default='',
         dest='ports',
         metavar=' ',
-        help='port filter, if multiple separate with "|"')
+        help='port filter, if multiple separate them with "|"')
     parser.add_option('-d',
         action='store_true',
         default=False,
@@ -300,16 +303,6 @@ def main():
         elif (flags == RST or flags == RSTACK) and fs in connections:
             if DEBUG:
                 print 'RST %s' % [line.strip()]
-            #if srcip == connections[fs].client_ip:
-            #    connections[fs].client_seq= int(seq)
-            #    connections[fs].client_ack = 0
-            #elif srcip == connections[fs].server_ip:
-            #    connections[fs].server_seq = int(seq)
-            #    connections[fs].server_ack = 0
-            #if connections[fs].client_seqis not None and\
-            #   connections[fs].client_ack is not None and\
-            #   connections[fs].server_seq is not None and\
-            #   connections[fs].server_ack is not None:
             connections.pop(fs, '')  
     s = Counter((x.server_ip for x in connections.values()))
     c = Counter((x.client_ip for x in connections.values()))
@@ -317,19 +310,18 @@ def main():
         'Server IP'.ljust(15),
         'Qty'.rjust(5),
         'Client IP'.ljust(15),
-        'Qty'.rjust(5)
-        )
+        'Qty'.rjust(5))
     print 47 * '-'
     for srv,cli in zip(sorted(s.iteritems(), key=itemgetter(1), reverse=True),
-                        sorted(c.iteritems(), key=itemgetter(1), reverse=True)):
+                       sorted(c.iteritems(), key=itemgetter(1), reverse=True)):
         print '%s %s     %s %s' % (
             srv[0].rjust(15),
             str(srv[1]).rjust(5), 
             cli[0].rjust(15), 
-            str(cli[1]).rjust(5)
-        )
+            str(cli[1]).rjust(5))
     print '...truncated...'
     print '\nTotal no. of active sockets: %s' % len(connections)
+
 
 if __name__ == '__main__':
     sys.exit(main())
