@@ -6,8 +6,8 @@ a TCP packet with RST flag is sent or received the socket is freed on both sides
 it also does not care about the net.ipv4.tcp_fin_timeout parameter. It simply considers the socket
 closed when the 4-way-handshake is completed. It requires tshark to be available at the default
 installation path on Windows or Linux. In addition one of my intentions was that I should be able
-run this script on Linux servers which are not connected to the internet and cannot connect to
-python library repos so they can only make use of that they came with by default.
+run this script on Linux servers which are not connected to the Internet, thus cannot make use of
+third party python libraries and so they can only make use of that they OS comes with by default.
 
 ## Example
 
