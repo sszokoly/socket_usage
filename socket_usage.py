@@ -356,8 +356,8 @@ def main():
                     if connections[fs].server_seq is None:
                         connections[fs].server_seq = int(seq)-1
         if opts.verbose:
-            for value in (x for x in connections.values() if not x.is_closed):
-                print value
+            for conn in (x for x in connections.values() if not x.is_closed):
+                print conn
     s = Counter((x.server_ip for x in connections.values()))
     c = Counter((x.client_ip for x in connections.values()))
     if len(connections):
