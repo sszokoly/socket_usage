@@ -167,7 +167,7 @@ def pcap_reader(infile, host_filter='', port_filter=''):
     """
     Parses pcap file and returns text output of each packet with certain fields
     :param one mandatory, two options strings
-    :return iterator, which yields the output of tshark line by line
+    :return: iterator, which yields the output of tshark line by line
     """
     R = '-R'
     tshark = tshark_path()
@@ -213,7 +213,7 @@ def pcap_reader(infile, host_filter='', port_filter=''):
         ))
     cmd = ' '.join((tshark, R, display_filter, fields, '-r', infile))
     if DEBUG:
-        print 'Tshark command: %s' % [cmd]
+        print 'tshark command: %s' % [cmd]
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     return iter(proc.stdout.readline, '')
 
