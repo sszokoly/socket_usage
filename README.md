@@ -8,8 +8,8 @@ the case it considers the socket 'lingering'. Most of the time these sockets eve
 be closed by the server or client but that cannot be determined for sure from the pcap trace.
 It requires tshark to be available at the default installation path on Windows or Linux.
 In addition one of the goals behind the development of this utility was that it should be able
-to do what it is meant to do on Linux servers which are not connected to the Internet, thus they
-can only make use of the standard python libraries and tools they come with by default.
+to do what it is meant to do on Linux servers which are not connected to the Internet, thus 
+they can only make use of the standard python libraries and tools they come with by default.
 
 ## Example
 
