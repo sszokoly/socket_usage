@@ -189,7 +189,7 @@ def tshark_path():
 def pcap_reader(infile, host_filter='', port_filter=''):
     """
     Parses pcap file and returns text output of each packet with certain fields
-    :param one mandatory, two options strings
+    :param infile:string, host_filter: string, port_filter:string
     :return: iterator, which yields the output of tshark line by line
     """
     R = '-R'
@@ -202,22 +202,16 @@ def pcap_reader(infile, host_filter='', port_filter=''):
         R = '-Y'
     default_filter = 'tcp'
     if host_filter:
-        host_filter = ''.join((
-            '(', 
+        host_filter = ''.join(('(',
             '||'.join('ip.addr==' + x for x in host_filter.split('|')),
-            ')',
-            ))
+            ')'))
     if port_filter:
-        port_filter = ''.join((
-            '(',
+        port_filter = ''.join(('(',
             '||'.join('tcp.port==' + x for x in port_filter.split('|')),
-            ')',
-            ))
-    display_filter = ''.join((
-            '"',
+            ')'))
+    display_filter = ''.join(('"',
             '&&'.join(x for x in (default_filter, host_filter, port_filter) if x),
-            '"',
-            ))
+            '"'))
     fields = ' '.join((
         '-ln',
         '-E separator="|"',
@@ -399,7 +393,7 @@ def main():
     total_open = len([x for x in connections.values() if x.is_open])
     total_linger = len([x for x in connections.values() if x.is_lingering])
     print '\nTotal no. of open sockets: %d' % total_open
-    print 'Total no. of ligering sockets: %d' % total_linger
+    print 'Total no. of lingering sockets: %d' % total_linger
 
 
 if __name__ == '__main__':
