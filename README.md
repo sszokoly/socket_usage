@@ -7,29 +7,35 @@ the socket closed when the 4-way or half-duplex closure is properly performed. I
 the case it considers the socket 'lingering'. Most of the time these sockets eventually may
 be closed by the server or client but that cannot be determined for sure from the pcap trace.
 It requires tshark to be available at the default installation path on Windows or Linux.
-In addition one of goals behind the development of this utility was that it should be able to
-do what it is meant to do on Linux servers which are not connected to the Internet, thus they
+In addition one of the goals behind the development of this utility was that it should be able
+to do what it is meant to do on Linux servers which are not connected to the Internet, thus they
 can only make use of the standard python libraries and tools they come with by default.
 
 ## Example
 
 ```
-$ python socket_usage.py 1700_1710.pcap.pcapng
+$ python socket_usage.py dump_sbc_eth1__16242_20170426105150
+--------------------------------------------------------------------------
+     Server      Total   Open Linger      Client       Total   Open Linger
+--------------------------------------------------------------------------
+    10.10.9.122      8      8      0      10.10.9.128      9      9      0
+    10.10.9.130      7      7      0      10.10.9.122      7      7      0
+    10.10.9.124      7      7      0      10.10.9.130      6      6      0
+    10.10.9.128      6      6      0      10.10.9.124      6      6      0
+    10.10.8.224      5      5      0      10.10.8.224      5      5      0
+     10.10.8.84      4      4      0       10.10.8.84      4      4      0
+    10.10.8.185      4      4      0      10.10.8.185      4      4      0
+    10.10.9.171      4      4      0      10.10.8.183      4      4      0
+    10.10.8.183      3      3      0      10.10.8.184      4      4      0
+    10.10.8.226      3      3      0      10.10.8.226      3      3      0
+    10.10.8.184      3      3      0      10.10.9.180      2      2      0
+    10.10.8.189      2      2      0      10.10.8.189      2      2      0
+ 192.168.215.11      1      1      0      10.10.8.186      1      1      0
+    10.10.9.180      1      1      0   192.168.215.11      1      1      0
+    10.10.8.186      1      1      0       10.41.3.66      1      1      0
+     10.41.3.62      1      1      0      10.10.9.171      1      1      0
 
-Server IP         Qty     Client IP         Qty
------------------------------------------------
-10.1.1.1          186      10.1.1.1          39
-10.20.176.204      69      10.220.180.109    31
-10.33.227.105      10       10.20.176.204     5
-10.23.182.156      10        10.79.46.246     5
-10.23.182.131      10       10.29.196.174     4
-10.17.157.119       5        10.29.196.62     3
-10.23.144.102       4         10.5.34.121     3
-  10.9.45.168       3        10.29.193.16     3
-  10.21.197.8       1      10.246.166.194     3
-  10.8.224.83       1      10.239.198.174     2
-...truncated...
-
-Total no. of active sockets: 299
+Total no. of open sockets: 60
+Total no. of ligering sockets: 0
 
 ```
