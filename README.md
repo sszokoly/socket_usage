@@ -1,15 +1,14 @@
 # socket_usage
-This script in the first place attempts to give a rough estimate of the total number of open
-tcp sockets extracted from the pcap files provided as arguments. It assumes the higher port
-number is the Client side ephemeral port and the lower port is the Server side service port.
-Furthermore it does not care about the net.ipv4.tcp_fin_timeout parameter. It simply considers
-the socket closed when the 4-way or half-duplex closure is properly performed. If that is not
-the case it considers the socket 'lingering'. Most of the time these sockets eventually may
-be closed by the server or client but that cannot be determined for sure from the pcap trace.
-It requires tshark to be available at the default installation path on Windows or Linux.
-In addition one of the goals behind the development of this utility was that it should be able
-to do what it is meant to do on Linux servers which are not connected to the Internet, thus 
-they can only make use of the standard python libraries and tools they come with by default.
+
+This script parses pcap files and attempts to give a good estimate on TCP socket usage per host acting as Client or Server.
+It assumes the host using the higher TCP port number in a connection to be the Client and the lower port side to be Server.
+It does not take into account OS parameters like net.ipv4.tcp_fin_timeout or. It simply considers a socket closed when 
+the 4-way or half-duplex closure procedures is properly performed, otherwise the socket is marked to be in 'Linger' state.
+Such lingering sockets eventually may get closed by the Server or Client side application or kernel but that cannot be
+determined with certainty from a pcap trace. It requires tshark (wireshark) to be available at the default installation 
+path on Windows or Linux and accessibly by the user running the script. In addition one of the goals behind the development
+of this utility was that it should be able to do what it is meant to do on Linux servers which may not be connected to the
+Internet, thus they can only make use of the standard python libraries and os tools they usually come with by default.
 
 ## Example
 
