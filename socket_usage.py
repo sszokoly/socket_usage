@@ -89,6 +89,8 @@ except:
             return self._data.iterkeys()
         def itercounts(self):
             return self._data.iteritems()
+        def iteritems(self): # added to be compatible with Counter
+            return self._data.iteritems()
         def mostcommon(self, n=None):
             if n is None:
                 return sorted(self.itercounts(), key=itemgetter(1), reverse=True)
@@ -214,6 +216,7 @@ def pcap_reader(infile, host_filter='', port_filter=''):
             '"'))
     fields = ' '.join((
         '-ln',
+        '-o tcp.relative_sequence_numbers:FALSE', 
         '-E separator="|"',
         '-T fields',
         '-e frame.number',
@@ -289,8 +292,8 @@ def main():
             if ',' in line:
                 continue
             no, srcip, srcport, dstip, dstport, seq, ack, flags = line.split('|', 7)
-            seq = int(seq)
-            ack = int(ack)
+            seq = seq and int(seq) or 0
+            ack = ack and int(ack) or 0
             flags = int(flags.replace('|', ''), 2)
             fs = frozenset([srcip, srcport, dstip, dstport])
             if (flags & SYN and flags & ACK) or\
