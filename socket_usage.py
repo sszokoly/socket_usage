@@ -6,7 +6,7 @@
 ## found in a pcap file, requires tshark to be available in the $PATH
 ## Options: see help, -h
 ## Version: see option -v
-## Date: 2017-11-24
+## Date: 2017-11-27
 #############################################################################
 '''
 import os
@@ -288,8 +288,7 @@ def main():
         for line in reader:
             if DEBUG:
                 print 'Packet: %s' % [line.strip()]
-            #possibly ICMP unreachable respose
-            if ',' in line:
+            if ',' in line: #possibly an ICMP unreachable respose, ignore it
                 continue
             no, srcip, srcport, dstip, dstport, seq, ack, flags = line.split('|', 7)
             seq = seq and int(seq) or 0
