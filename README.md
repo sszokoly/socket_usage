@@ -35,6 +35,6 @@ $ python socket_usage.py dump_sbc_eth1__16242_20170426105150
      10.41.3.62      1      1      0      10.10.9.171      1      1      0
 
 Total no. of open sockets: 60
-Total no. of ligering sockets: 0
+Total no. of lingering sockets: 0
 
 ```
